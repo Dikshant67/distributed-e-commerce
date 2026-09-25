@@ -7,6 +7,7 @@ import com.ecommerce.user.dto.UserResponseDto;
 import com.ecommerce.user.entity.User;
 import com.ecommerce.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
