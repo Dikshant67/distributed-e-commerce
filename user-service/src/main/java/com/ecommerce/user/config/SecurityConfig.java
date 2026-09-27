@@ -22,11 +22,13 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http.csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth.requestMatchers("/api/users/register", "/api/users/login","/actuator/**")
+                .authorizeHttpRequests(auth ->
+                        auth.requestMatchers("/api/v1/users/register", "/api/v1/users/login","/actuator/**")
                         .permitAll().anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter , UsernamePasswordAuthenticationFilter.class);
 
