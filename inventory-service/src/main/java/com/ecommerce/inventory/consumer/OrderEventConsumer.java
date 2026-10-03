@@ -1,5 +1,6 @@
 package com.ecommerce.inventory.consumer;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
@@ -10,10 +11,14 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OrderEventConsumer {
 		private final InventoryService inventoryService;
-		@KafkaListener(topics = "order-event", groupId = "inventory-group")
+		@KafkaListener(topics = "order-event",
+				       groupId = "inventory-group"
+		)
 		public void consume(OrderPlacedEvent event) {
+			log.info("Received Order Event: {}", event);
 			inventoryService.updateStock(event);
 		}
 }

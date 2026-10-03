@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import javax.management.RuntimeErrorException;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import com.ecommerce.inventory.Mapper.InventoryMapper;
@@ -20,6 +21,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class InventoryService {
 		private final InventoryRepository inventoryRepo;
@@ -35,22 +37,35 @@ public class InventoryService {
 		}
 		@Transactional
 		public void updateStock(OrderPlacedEvent event) {
+
 			if(processedOrderRepo.existsByOrderId(event.getOrderId())) {
 				return;
 			}
-			Inventory inventory =  inventoryRepo.findBySkuCode(event.getSkuCode()).orElseThrow(()-> new InventoryNotFoundException(event.getSkuCode()));
-		Integer availableQuantity =inventory.getQuantity();
-		Integer orderedQuantity = event.getQuantity();
-		if(availableQuantity<orderedQuantity) {
-			throw new RuntimeException("Insufficient stock for this skuCode");
-			
-		}
-		inventory.setQuantity(availableQuantity-orderedQuantity);
-		inventoryRepo.save(inventory);
-		ProcessedOrder processed = new ProcessedOrder();
-		processed.setOrderId(event.getOrderId());
-		processed.setProcessedAt(LocalDateTime.now());
-		processedOrderRepo.save(processed);
+			Inventory inventory =  inventoryRepo.findBySkuCode(event.getSkuCode())
+									.orElseThrow(()-> new InventoryNotFoundException(event.getSkuCode()));
+
+			Integer availableQuantity =inventory.getQuantity();
+
+			Integer orderedQuantity = event.getQuantity();
+
+			if(availableQuantity<orderedQuantity) {
+				throw new RuntimeException("Insufficient stock for this skuCode");
+
+			}
+			inventory.setQuantity(availableQuantity-orderedQuantity);
+			inventoryRepo.save(inventory);
+
+			log.info("Inventory Updated Successfully : {}",inventory);
+
+			ProcessedOrder processed = new ProcessedOrder();
+
+			processed.setOrderId(event.getOrderId());
+
+			processed.setProcessedAt(LocalDateTime.now());
+
+			processedOrderRepo.save(processed);
+
+			log.info("Processed Order Updated Successfully : {}",processed);
 		}
 }
 
