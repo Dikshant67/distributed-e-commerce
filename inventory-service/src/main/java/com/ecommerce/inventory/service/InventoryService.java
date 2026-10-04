@@ -1,12 +1,5 @@
 package com.ecommerce.inventory.service;
 
-import java.time.LocalDateTime;
-
-import javax.management.RuntimeErrorException;
-
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-
 import com.ecommerce.inventory.Mapper.InventoryMapper;
 import com.ecommerce.inventory.dto.InventoryRequest;
 import com.ecommerce.inventory.dto.InventoryResponse;
@@ -16,17 +9,24 @@ import com.ecommerce.inventory.event.OrderPlacedEvent;
 import com.ecommerce.inventory.exception.InventoryNotFoundException;
 import com.ecommerce.inventory.repository.InventoryRepository;
 import com.ecommerce.inventory.repository.ProcessedOrderRepository;
-
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class InventoryService {
+
 		private final InventoryRepository inventoryRepo;
+
 		private final ProcessedOrderRepository processedOrderRepo;
+
 		private final InventoryMapper inventoryMapper;
+
 		public InventoryResponse checkInventory(String skuCode) {
 			Inventory inventory =  inventoryRepo.findBySkuCode(skuCode).orElseThrow(()-> new InventoryNotFoundException(skuCode));
 		return inventoryMapper.toresponse(inventory);
@@ -39,6 +39,10 @@ public class InventoryService {
 		public void updateStock(OrderPlacedEvent event) {
 
 			if(processedOrderRepo.existsByOrderId(event.getOrderId())) {
+				log.info(
+						"Duplicate OrderPlacedEvent ignored: {}",
+						event.getOrderId()
+				);
 				return;
 			}
 			Inventory inventory =  inventoryRepo.findBySkuCode(event.getSkuCode())
