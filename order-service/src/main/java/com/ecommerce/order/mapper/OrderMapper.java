@@ -4,7 +4,7 @@ import org.springframework.stereotype.Component;
 
 import com.ecommerce.order.dto.OrderRequest;
 import com.ecommerce.order.dto.OrderResponse;
-import com.ecommerce.order.order.Order;
+import com.ecommerce.order.entity.*;
 
 @Component
 public class OrderMapper {

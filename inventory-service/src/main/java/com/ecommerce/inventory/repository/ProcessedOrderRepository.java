@@ -7,5 +7,5 @@ import com.ecommerce.inventory.entity.ProcessedOrder;
 
 @Repository
 public interface ProcessedOrderRepository extends JpaRepository<ProcessedOrder, Long>{
-boolean existsByOrderId(String orderId);
+    boolean existsByOrderId(String orderId);
 }

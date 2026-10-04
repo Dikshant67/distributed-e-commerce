@@ -6,7 +6,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import com.ecommerce.order.event.OrderPlacedEvent;
-
+// INFO : No longer needed as outbox publisher does this work
 @Service
 @Slf4j
 @RequiredArgsConstructor

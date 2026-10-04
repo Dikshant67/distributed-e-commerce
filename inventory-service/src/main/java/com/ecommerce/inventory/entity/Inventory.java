@@ -18,9 +18,9 @@ import lombok.NoArgsConstructor;
 public class Inventory {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-		private Long id;
+	private Long id;
 	@Column(unique = true, nullable = false)
-		private String skuCode;
+	private String skuCode;
 	@Column(nullable = false)
-		private Integer quantity;
+	private Integer quantity;
 }
