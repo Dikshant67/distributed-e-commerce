@@ -1,16 +1,13 @@
 package com.ecommerce.user.util;
 
-import com.ecommerce.user.dto.UserCreatedRequestDto;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import java.security.Key;
 import java.util.Date;
 
 @Component
@@ -26,11 +23,12 @@ public class JwtUtil {
     public String generateToken(long userId,String email,String role) {
         long nowMillis = System.currentTimeMillis();
 
-        return Jwts.builder().subject(String.valueOf(userId))
+        return Jwts.builder()
+                .subject(String.valueOf(userId))
                 .claim("email",email)
                 .claim("roles",role)
                 .issuedAt(new Date(nowMillis))
-                .expiration(new Date(jwtExpirationInMs))
+                .expiration(new Date(System.currentTimeMillis ()+jwtExpirationInMs))
                 .signWith(key)
                 .compact();
     }

@@ -2,7 +2,6 @@ package com.ecommerce.user.mapper;
 
 import com.ecommerce.user.dto.LoginResponseDto;
 import com.ecommerce.user.entity.User;
-import lombok.extern.java.Log;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -12,6 +11,7 @@ public class AuthMapper {
                 .email(user.getEmail())
                 .token(token)
                 .tokenType("Bearer")
+                .userId (user.getId())
                 .name(user.getName())
                 .build();
 

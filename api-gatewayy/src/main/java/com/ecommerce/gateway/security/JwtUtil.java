@@ -36,6 +36,6 @@ public class JwtUtil {
         return extractClaimsJWT(token).getSubject();
     }
     public String getRole(String token){
-        return extractClaimsJWT(token).get("role",String.class);
+        return extractClaimsJWT(token).get("roles",String.class);
     }
 }

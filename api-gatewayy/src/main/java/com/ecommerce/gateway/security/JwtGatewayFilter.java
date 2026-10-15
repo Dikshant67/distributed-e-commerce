@@ -1,11 +1,11 @@
 package com.ecommerce.gateway.security;
 
-import org.springframework.cloud.gateway.filter.GatewayFilter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
+import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
@@ -15,10 +15,11 @@ import java.util.List;
 import java.util.Map;
 
 @Component
-
-public class JwtGatewayFilter implements GatewayFilter, Ordered {
+@Slf4j
+public class JwtGatewayFilter implements GlobalFilter, Ordered {
     private final JwtUtil jwtUtil;
-    private static final List<String> PUBLIC_URLS=List.of("/api/v1/users/register","/api/v1/users/login");
+    private static final List<String> PUBLIC_URLS=List.of("/api/v1/users/register"
+            ,"/api/v1/users/login");
     public JwtGatewayFilter(JwtUtil jwtUtil) {
         this.jwtUtil = jwtUtil;
     }
@@ -37,17 +38,23 @@ public class JwtGatewayFilter implements GatewayFilter, Ordered {
         }
         String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+	        log.error ("Invalid JWT Token / No token found {}", authHeader);
             return unauthorized(exchange);
         }
         String token = authHeader.substring(7);
-
+        log.info("JWT Token is "+token);
         if( ! jwtUtil.validateToken(token) ){
+            log.error ("Invalid JWT Token");
             return unauthorized(exchange);
         }
 
         String userId =  jwtUtil.getUserId(token);
         String  role   =  jwtUtil.getRole(token);
+
+        log.info("User Id "+userId);
+        log.info("Role "+role);
         if (!isAuthorized(role,path,method)){
+            log.error ("Invalid JWT Token");
             return forbidden(exchange);
         }
 
@@ -67,12 +74,12 @@ public class JwtGatewayFilter implements GatewayFilter, Ordered {
       return exchange.getResponse().setComplete();
     }
     private static final Map<String , Map<String , List<String>>> ROLE_API_PERMISSIONS = Map.of(
-            "ADMIN",Map.of("GET",List.of("/api/products"),
+            "ROLE_ADMIN",Map.of("GET",List.of("/api/products"),
                                 "POST",List.of("/api/products"),
                                 "PUT",List.of("/api/products"),
                                 "DELETE",List.of("/api/products")),
 
-            "USER",Map.of("GET",List.of("/api/products"))
+            "ROLE_USER",Map.of("GET",List.of("/api/products"))
 
 
     );
