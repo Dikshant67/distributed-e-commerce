@@ -21,21 +21,49 @@ import java.util.Collections;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        final String authorizationHeader = request.getHeader("Authorization");
-        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-            final String token = authorizationHeader.substring(7);
-            try {
-                jwtUtil.validateToken(token);
-                Long userId = jwtUtil.getUserIdFromToken(token);
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userId, null, Collections.emptyList());
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-            }catch (Exception e){
-                SecurityContextHolder.clearContext();
-                log.warn("Invalid JWT token: {}", e.getMessage());
-            }
-        }
-        filterChain.doFilter(request, response);
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain
+    ) throws ServletException, IOException {
 
+        String authorizationHeader = request.getHeader("Authorization");
+
+        if (authorizationHeader == null ||
+                !authorizationHeader.startsWith("Bearer ")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        String token = authorizationHeader.substring(7);
+
+        try {
+            jwtUtil.validateToken(token);
+
+            Long userId = jwtUtil.getUserIdFromToken(token);
+
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(
+                            userId,
+                            null,
+                            Collections.emptyList()
+                    );
+
+            SecurityContextHolder.getContext()
+                    .setAuthentication(authentication);
+
+        } catch (Exception e) {
+            SecurityContextHolder.clearContext();
+
+            log.warn("JWT authentication failed: {}", e.getMessage());
+
+            response.sendError(
+                    HttpServletResponse.SC_UNAUTHORIZED,
+                    "Invalid or expired JWT token"
+            );
+            return;
+        }
+
+        filterChain.doFilter(request, response);
     }
 }
