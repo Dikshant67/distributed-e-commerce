@@ -1,5 +1,5 @@
 server:
-  port: 8086
+  port: 8082
 
 spring:
   kafka:
@@ -33,3 +33,12 @@ twilio:
   account-sid: ${TWILIO_SID}
   auth-token: ${TWILIO_TOKEN}
   from-number : ${FROM_NUMBER}
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans
