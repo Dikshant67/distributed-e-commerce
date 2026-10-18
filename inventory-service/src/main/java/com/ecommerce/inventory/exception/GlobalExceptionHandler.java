@@ -12,6 +12,17 @@ import java.util.Map;
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
+    @ExceptionHandler(InventoryAlreadyExistsException.class)
+    public ResponseEntity<Map<String, String>> handleInventoryAlreadyExists(
+            InventoryAlreadyExistsException ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(Map.of(
+                        "error", "Inventory already exists",
+                        "message", ex.getMessage()
+                ));
+    }
     @ExceptionHandler(InventoryNotFoundException.class)
     public ResponseEntity<?> handleInventoryNotFoundException(InventoryNotFoundException e) {
 
