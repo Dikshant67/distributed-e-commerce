@@ -1,18 +1,18 @@
 package com.ecommerce.payment.service;
 
-import org.springframework.stereotype.Service;
-
+import com.ecommerce.payment.DTO.PaymentRequest;
 import com.ecommerce.payment.DTO.PaymentResponse;
 import com.ecommerce.payment.DTO.PaymentStatusUpdateRequest;
-import com.ecommerce.payment.DTO.PaymentRequest;
 import com.ecommerce.payment.entity.Payment;
 import com.ecommerce.payment.enums.PaymentStatus;
 import com.ecommerce.payment.exception.PaymentNotFoundException;
 import com.ecommerce.payment.repository.PaymentRepository;
 import com.ecommerce.payment.util.TransactionIdGenerator;
-
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -32,9 +32,19 @@ public class PaymentServiceImpl  implements PaymentService{
 	}
 
 	@Override
-	public PaymentResponse getPaymentByOrderId(String orderId) {
-		Payment payment = paymentRepo.findByOrderId(orderId).orElseThrow(()-> new PaymentNotFoundException("Payment not found for this orderid "+orderId));
-		return mapToResponse(payment);
+	public List<PaymentResponse> getPaymentByOrderId(String orderId) {
+
+		List<Payment> payments = paymentRepo.findByOrderId(orderId)
+				.filter(list -> !list.isEmpty())
+				.orElseThrow(() ->
+						new PaymentNotFoundException(
+								"Payment not found for this orderId: " + orderId
+						)
+				);
+
+		return payments.stream()
+				.map(this::mapToResponse)
+				.toList();
 	}
 
 	@Override
