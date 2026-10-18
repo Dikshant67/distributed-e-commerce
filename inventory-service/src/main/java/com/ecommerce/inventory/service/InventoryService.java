@@ -6,12 +6,14 @@ import com.ecommerce.inventory.dto.InventoryResponse;
 import com.ecommerce.inventory.entity.Inventory;
 import com.ecommerce.inventory.entity.ProcessedOrder;
 import com.ecommerce.inventory.event.OrderPlacedEvent;
+import com.ecommerce.inventory.exception.InventoryAlreadyExistsException;
 import com.ecommerce.inventory.exception.InventoryNotFoundException;
 import com.ecommerce.inventory.repository.InventoryRepository;
 import com.ecommerce.inventory.repository.ProcessedOrderRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -29,12 +31,27 @@ public class InventoryService {
 
 		public InventoryResponse checkInventory(String skuCode) {
 			Inventory inventory =  inventoryRepo.findBySkuCode(skuCode).orElseThrow(()-> new InventoryNotFoundException(skuCode));
-		return inventoryMapper.toresponse(inventory);
+		return inventoryMapper.toResponse(inventory);
 		}
-		public void addInventory(InventoryRequest request) {
-			Inventory inventory = inventoryMapper.toEntity(request);
+
+	public void addInventory(InventoryRequest request) {
+
+		String skuCode = request.getSkuCode();
+
+		if (inventoryRepo.existsBySkuCode(skuCode)) {
+			throw new InventoryAlreadyExistsException (skuCode);
+		}
+
+		Inventory inventory = inventoryMapper.toEntity(request);
+
+		try {
 			inventoryRepo.save(inventory);
+			log.info("Inventory added successfully for SKU: {}", skuCode);
+		} catch (DataIntegrityViolationException ex) {
+			log.warn("Inventory constraint violation for SKU: {}", skuCode);
+			throw new InventoryAlreadyExistsException(skuCode);
 		}
+	}
 		@Transactional
 		public void updateStock(OrderPlacedEvent event) {
 
