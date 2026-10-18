@@ -40,9 +40,13 @@ spring:
             - id: ORDER-SERVICE
               uri: lb://ORDER-SERVICE
               predicates:
-                - Path=/api/orders/**
+                - Path=/api/order/**
               filters:
                 - CustomRouteFilter
+            - id : PAYMENT-SERVICE
+              uri : lb://PAYMENT-SERVICE
+              predicates:
+                  - Path=/api/payments/**
 
 eureka:
   client:
