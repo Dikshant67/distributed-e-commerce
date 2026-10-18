@@ -8,6 +8,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
@@ -17,9 +18,15 @@ import java.util.Map;
 @Component
 @Slf4j
 public class JwtGatewayFilter implements GlobalFilter, Ordered {
+
     private final JwtUtil jwtUtil;
-    private static final List<String> PUBLIC_URLS=List.of("/api/v1/users/register"
+
+    private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
+
+    private static final List<String> PUBLIC_URLS=List.of(
+            "/api/v1/users/register"
             ,"/api/v1/users/login");
+
     public JwtGatewayFilter(JwtUtil jwtUtil) {
         this.jwtUtil = jwtUtil;
     }
@@ -33,7 +40,8 @@ public class JwtGatewayFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getURI().getPath();
         String method = exchange.getRequest().getMethod().name();
-        if (PUBLIC_URLS.stream().anyMatch(path::contains)) {
+        if (PUBLIC_URLS.stream()
+                .anyMatch(publicPath -> PATH_MATCHER.match(publicPath, path))) {
             return chain.filter(exchange);
         }
         String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
@@ -54,7 +62,10 @@ public class JwtGatewayFilter implements GlobalFilter, Ordered {
         log.info("User Id "+userId);
         log.info("Role "+role);
         if (!isAuthorized(role,path,method)){
-            log.error ("Invalid JWT Token");
+            log.warn(
+                    "Access denied: role={}, method={}, path={}",
+                    role, method, path
+            );
             return forbidden(exchange);
         }
 
@@ -73,26 +84,72 @@ public class JwtGatewayFilter implements GlobalFilter, Ordered {
       exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
       return exchange.getResponse().setComplete();
     }
-    private static final Map<String , Map<String , List<String>>> ROLE_API_PERMISSIONS = Map.of(
-            "ROLE_ADMIN",Map.of("GET",List.of("/api/products"),
-                                "POST",List.of("/api/products"),
-                                "PUT",List.of("/api/products"),
-                                "DELETE",List.of("/api/products")),
+    private static final Map<String, Map<String, List<String>>> ROLE_API_PERMISSIONS = Map.of(
 
-            "ROLE_USER",Map.of("GET",List.of("/api/products"))
+            "ROLE_ADMIN", Map.of(
+                    "GET", List.of(
+                            "/api/products",
+                            "/api/inventory/*",
+                            "/api/payments",
+                            "/api/payments/**"
+                    ),
+                    "POST", List.of(
+                            "/api/products",
+                            "/api/inventory",
+                            "/api/order",
+                            "/api/payments",
+                            "/api/payments/**"
+                    ),
+                    "PUT", List.of(
+                            "/api/products"
+                    ),
+                    "DELETE", List.of(
+                            "/api/products"
+                    )
+            ),
 
-
+            "ROLE_USER", Map.of(
+                    "GET", List.of(
+                            "/api/products",
+                            "/api/inventory/*",
+                            "/api/payments",
+                            "/api/payments/**"
+                    ),
+                    "POST", List.of(
+                            "/api/order",
+                            "/api/payments",
+                            "/api/payments/**"
+                    )
+            )
     );
-    private boolean isAuthorized(String role,String path,String method) {
-        Map<String , List<String>> permissions = ROLE_API_PERMISSIONS.get(role);
-        if (permissions == null) {
-            return false;
 
-        }
-        List<String> allowedPaths = permissions.get(method);
-        if (allowedPaths == null) {
+
+
+
+    private boolean isAuthorized(String role, String path, String method) {
+
+        Map<String, List<String>> permissions = ROLE_API_PERMISSIONS.get(role);
+
+        if (permissions == null) {
+            log.warn("No permissions configured for role: {}", role);
             return false;
         }
-        return allowedPaths.stream().anyMatch(path::startsWith);
+
+        List<String> allowedPaths = permissions.get(method);
+
+        if (allowedPaths == null) {
+            log.warn("Method {} not allowed for role {}", method, role);
+            return false;
+        }
+
+        boolean authorized = allowedPaths.stream()
+                .anyMatch(pattern -> PATH_MATCHER.match(pattern, path));
+
+        log.info(
+                "Authorization result: role={}, method={}, path={}, allowed={}",
+                role, method, path, authorized
+        );
+
+        return authorized;
     }
 }
