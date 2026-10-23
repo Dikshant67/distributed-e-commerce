@@ -14,7 +14,7 @@ public class InventoryMapper {
 		inventory.setQuantity(request.getQuantity());
 		return inventory;
 		}
-		public InventoryResponse toresponse(Inventory inventory) {
+		public InventoryResponse toResponse(Inventory inventory) {
 			return new InventoryResponse(
 					inventory.getSkuCode(),
 					inventory.getQuantity()>0,
