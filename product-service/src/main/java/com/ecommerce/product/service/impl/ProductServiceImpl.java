@@ -3,11 +3,13 @@ package com.ecommerce.product.service.impl;
 import com.ecommerce.product.dto.ProductDto;
 import com.ecommerce.product.entity.Category;
 import com.ecommerce.product.entity.Product;
+import com.ecommerce.product.event.ProductEventPublisher;
 import com.ecommerce.product.mapper.ProductMapper;
 import com.ecommerce.product.repository.ProductRepository;
 import com.ecommerce.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +31,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final ProductMapper productMapper;
     private final String uploadDir = System.getProperty("user.dir")+"/uploads/product/";
+    private final ProductEventPublisher productEventPublisher;
 
     @Override
     public ProductDto createProduct(ProductDto productDto) {
@@ -39,7 +42,9 @@ public class ProductServiceImpl implements ProductService {
         }
       Product product=  productMapper.toEntity(productDto,category);
         Product savedProduct = productRepository.save(product);
-        return productMapper.toDto(savedProduct);
+        ProductDto response = productMapper.toDto (savedProduct);
+        productEventPublisher.publishProductCreated (response.getId ());
+        return response;
     }
 
     @Override
@@ -54,15 +59,19 @@ public class ProductServiceImpl implements ProductService {
             category.setId(productDto.getCategoryId());
             product.setCategory(category);
         }
-        return productMapper.toDto(productRepository.save(product));
+        ProductDto saved = productMapper.toDto (productRepository.save (product));
+        productEventPublisher.publishProductUpdated (saved.getId ());
+        return saved;
     }
 
     @Override
     public void deleteProduct(Long id) {
         productRepository.deleteById(id);
+        productEventPublisher.publishProductDeleted (id);
     }
 
     @Override
+    @Cacheable(value = "productCache",key = "#id")  //cache aside
     public ProductDto getProduct(Long id) {
       Product product=  productRepository.findById(id).orElseThrow(()-> new RuntimeException("Product not found"));
         return productMapper.toDto(product);
