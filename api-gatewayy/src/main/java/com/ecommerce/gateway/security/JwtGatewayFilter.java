@@ -89,6 +89,7 @@ public class JwtGatewayFilter implements GlobalFilter, Ordered {
             "ROLE_ADMIN", Map.of(
                     "GET", List.of(
                             "/api/products",
+                            "/api/products/*",
                             "/api/inventory/*",
                             "/api/payments",
                             "/api/payments/**"
